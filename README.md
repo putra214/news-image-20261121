@@ -8,17 +8,20 @@ make.fun's "Sum up 21 November's world news in one image" bounty.
 A one-page newspaper front page, drawn entirely in code
 (`generate_poster.py`, Python + Pillow): a masthead dated
 **SATURDAY, 21 NOVEMBER 2026**, a lead story on the COP31 climate talks
-running into overtime in Antalya, six more main stories (Mexico's capture of
-cartel boss "El Chapo Isidro", the Russian missile strike on Kryvyi Rih, the
-AI stock sell-off, the Hormuz tanker standoff, Nvidia's H200 export halt, the
-M6.7 Peru quake), twelve briefs from across seven regions, and a short
-"Also this week" line.
+running into overtime in Antalya, six more main stories (the Sparta II drone
+attack in the Gulf of Finland, the Russian missile strike on Kryvyi Rih, the
+Hormuz standoff, Bitcoin's two-year low and rebound, Mexico's capture of
+cartel boss "El Chapo Isidro", the M6.7 Peru quake), eighteen briefs from
+across six regions, and a DATE CHECK box listing the big non-21-November
+stories that were deliberately left out.
 
 Every event in the main sections happened, or was first reported, on
-21 November 2026. The two earlier items in the "Also this week" line — the
-ICJ's Myanmar genocide ruling (19 Nov) and the Shenzhen peace declaration
-(20 Nov) — carry their real dates, so nothing is presented as the day's news
-that was not.
+21 November 2026. Stories from other days are not in the main sections: the
+DATE CHECK box lists nine of them with their real dates — Nvidia H200
+(17 Nov), Wall Street sell-off (20 Nov), Poland missile (20 Nov), Zecler
+verdict (20 Nov), Palisades verdict (20 Nov), ICJ Myanmar ruling (19 Nov),
+Shenzhen declaration (19 Nov), Anthropic's $2tn debut (19 Nov), Voyager 1
+(18 Nov) — so nothing is presented as the day's news that was not.
 
 ## How it is built
 

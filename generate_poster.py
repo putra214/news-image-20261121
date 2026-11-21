@@ -4,7 +4,12 @@ Run:  python3 generate_poster.py            -> writes entry.png (1024x1024)
 The image is drawn entirely in code: flat vector-style art + real text, so
 every letter stays sharp. No network, no randomness, no timestamps in the
 output: the same script always writes the same bytes.
+
+v4 (2026-11-22, fix session): replaces the v3 poster. See build-report.md.
+NOTE: v4 generator written but NOT YET RUN/TESTED in this session — entry.png
+in this repo is still v3 until the generator is run and main.py is tested 2x.
 """
+import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -62,8 +67,7 @@ def centered(draw, cx, y, text, fnt, fill=INK):
 
 
 # ---------------------------------------------------------------------------
-# Flat illustrations (all drawn with PIL primitives, no photos, no text
-# except the short "H200" label on the chip).
+# Flat illustrations (all drawn with PIL primitives, no photos, no text).
 # ---------------------------------------------------------------------------
 
 def art_globe(d, x, y, w, h):
@@ -91,24 +95,65 @@ def art_pin(d, x, y, w, h):
     d.ellipse([cx - 12, cy - 12, cx + 12, cy + 12], fill=LIGHT)
 
 
-def art_bridge(d, x, y, w, h):
-    d.rectangle([x, y, x + w, y + h], fill=(232, 238, 244))
-    # deck and towers
-    d.rectangle([x + 8, y + h - 34, x + w - 8, y + h - 26], fill=(70, 78, 88))
-    for tx in (x + 26, x + w - 40):
-        d.rectangle([tx, y + 22, tx + 12, y + h - 26], fill=(70, 78, 88))
-    d.line([x + 32, y + 28, x + w // 2, y + h - 30], fill=(120, 128, 138), width=2)
-    d.line([x + w - 32, y + 28, x + w // 2, y + h - 30], fill=(120, 128, 138), width=2)
-    # explosion burst on the deck
-    cx, cy = x + w // 2, y + h - 52
+def art_ship(d, x, y, w, h):
+    """Sparta II: cargo ship on fire in the Gulf of Finland, drones above."""
+    d.rectangle([x, y, x + w, y + h], fill=(214, 234, 248))
+    # two drones in the sky
+    for dx, dy in ((x + 22, y + 16), (x + 78, y + 26)):
+        d.ellipse([dx - 5, dy - 3, dx + 5, dy + 3], fill=(40, 40, 40))
+        d.line([dx - 10, dy - 6, dx + 10, dy - 6], fill=(40, 40, 40), width=2)
+        d.line([dx - 10, dy + 6, dx + 10, dy + 6], fill=(40, 40, 40), width=2)
+    # sea
+    d.rectangle([x, y + h - 30, x + w, y + h], fill=(43, 110, 160))
+    for wy in (y + h - 22, y + h - 12):
+        for k in range(4):
+            d.arc([x + k * 30 - 6, wy - 7, x + k * 30 + 24, wy + 7],
+                  180, 360, fill=(214, 234, 248), width=2)
+    # hull
+    d.polygon([(x + 10, y + h - 52), (x + w - 10, y + h - 52),
+               (x + w - 24, y + h - 30), (x + 24, y + h - 30)], fill=(31, 58, 95))
+    # containers
+    for i, col in enumerate([(176, 30, 30), (242, 160, 7), (14, 107, 92)]):
+        d.rectangle([x + 20 + i * 26, y + h - 70, x + 42 + i * 26, y + h - 52],
+                    fill=col)
+    # bridge tower
+    d.rectangle([x + w - 32, y + h - 78, x + w - 16, y + h - 52], fill=(70, 78, 88))
+    # fire on deck + smoke
+    cx, cy = x + w // 2, y + h - 66
     pts = []
-    import math
-    for i in range(12):
-        ang = math.pi * i / 6
-        rr = 30 if i % 2 == 0 else 13
+    for i in range(10):
+        ang = math.pi * i / 5
+        rr = 16 if i % 2 == 0 else 7
         pts.append((cx + rr * math.cos(ang), cy + rr * math.sin(ang)))
     d.polygon(pts, fill=(242, 140, 20))
-    d.ellipse([cx - 8, cy - 8, cx + 8, cy + 8], fill=(255, 210, 90))
+    d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=(255, 210, 90))
+    for sx, sy, sr in ((cx - 8, cy - 22, 7), (cx + 4, cy - 34, 9), (cx - 2, cy - 48, 8)):
+        d.ellipse([sx - sr, sy - sr, sx + sr, sy + sr], fill=(120, 120, 120))
+
+
+def art_city(d, x, y, w, h):
+    """Kryvyi Rih: dusk skyline, missile trail, impact burst on a rooftop."""
+    d.rectangle([x, y, x + w, y + h], fill=(238, 205, 160))
+    d.ellipse([x + w - 34, y + 8, x + w - 10, y + 32], fill=(242, 160, 7))
+    # missile trail from top right to the impact point
+    ix, iy = x + 62, y + h - 58
+    d.line([x + w - 8, y + 10, ix, iy], fill=(255, 120, 40), width=3)
+    d.ellipse([x + w - 12, y + 6, x + w - 4, y + 14], fill=(255, 255, 255))
+    # skyline with lit windows
+    base = y + h
+    for bx, bh in ((x + 4, 52), (x + 30, 74), (x + 58, 60), (x + 84, 44)):
+        d.rectangle([bx, base - bh, bx + 24, base], fill=(52, 58, 72))
+        for wy in range(base - bh + 8, base - 6, 12):
+            for wx in (bx + 5, bx + 14):
+                d.rectangle([wx, wy, wx + 4, wy + 5], fill=(255, 210, 90))
+    # impact burst
+    pts = []
+    for i in range(12):
+        ang = math.pi * i / 6
+        rr = 18 if i % 2 == 0 else 8
+        pts.append((ix + rr * math.cos(ang), iy + rr * math.sin(ang)))
+    d.polygon(pts, fill=(242, 140, 20))
+    d.ellipse([ix - 5, iy - 5, ix + 5, iy + 5], fill=(255, 210, 90))
 
 
 def art_chart(d, x, y, w, h):
@@ -140,25 +185,6 @@ def art_tanker(d, x, y, w, h):
     d.line([x + w - 25, y + h - 84, x + w - 25, y + h - 72], fill=GREY, width=3)
 
 
-def art_chip(d, x, y, w, h):
-    d.rectangle([x, y, x + w, y + h], fill=(239, 239, 239))
-    cx, cy = x + w // 2, y + h // 2
-    for i in range(5):
-        px = x + 18 + i * 18
-        d.rectangle([px, y + 12, px + 8, y + 26], fill=(120, 120, 120))
-        d.rectangle([px, y + h - 26, px + 8, y + h - 12], fill=(120, 120, 120))
-    for i in range(4):
-        py = y + 18 + i * 20
-        d.rectangle([x + 12, py, x + 26, py + 8], fill=(120, 120, 120))
-        d.rectangle([x + w - 26, py, x + w - 12, py + 8], fill=(120, 120, 120))
-    d.rectangle([cx - 34, cy - 34, cx + 34, cy + 34], fill=(34, 34, 34))
-    d.rectangle([cx - 20, cy - 20, cx + 20, cy + 20], outline=(200, 200, 200), width=2)
-    f = font(SANS_B, 17)
-    t = "H200"
-    tw = d.textlength(t, font=f)
-    d.text((cx - tw / 2, cy - 9), t, font=f, fill=(255, 255, 255))
-
-
 def art_quake(d, x, y, w, h):
     d.rectangle([x, y, x + w, y + h], fill=(243, 232, 216))
     d.polygon([(x + 6, y + h - 20), (x + 42, y + 26), (x + 78, y + h - 20)],
@@ -174,9 +200,17 @@ def art_quake(d, x, y, w, h):
 
 
 # ---------------------------------------------------------------------------
-# Content — every event verified to have happened, or first been reported,
-# on Saturday 21 November 2026 (sources: Reuters, AP, One Turn, KIRO/AP).
-# The two 19-20 Nov items are kept in a separate, honestly dated line.
+# Content — every event in the main sections verified to have happened, or
+# first been reported, on Saturday 21 November 2026 (sources: Reuters, AP,
+# One Turn, ESA/Nature, Interfax-Ukraine, Ukrinform, Wisden, UKMTO, Finwire).
+# Overnight Fri->Sat events (Kryvyi Rih, Mexico capture, Peru quake) count
+# because they were first reported on Saturday 21 Nov.
+# Items from other days are NOT in the main sections: they are listed with
+# their real dates in the DATE CHECK box.
+# Dropped from v3 after verification: Haiti (operation 19 Nov), Ethiopia
+# (statement 19 Nov), Sozcu TV (seizure 17 Nov), Sikh-plot sentence (20 Nov),
+# Zecler verdict (20 Nov), Palisades verdict (20 Nov), Mlambo-Ngcuka death
+# (20 Nov), WHO Ebola update (20 Nov), Trump/Iran-strikes report (18 Nov).
 # ---------------------------------------------------------------------------
 
 LEAD = {
@@ -189,26 +223,26 @@ LEAD = {
 }
 
 STORIES = [
-    {"kicker": "AMERICAS  •  SINALOA, MEXICO", "art": art_pin,
-     "headline": "Mexico captures FBI most-wanted cartel boss \u201cEl Chapo Isidro\u201d",
-     "body": ("Fausto Isidro Meza Flores is seized after a shoot-out. "
-              "Eleven are killed as violence flares across the state.")},
-    {"kicker": "EUROPE  •  UKRAINE", "art": art_bridge,
+    {"kicker": "BALTIC SEA  •  GULF OF FINLAND", "art": art_ship,
+     "headline": "Drones strike Russian cargo ship Sparta II",
+     "body": ("Two drones hit the ship bound for Kaliningrad; "
+              "all 16 crew are rescued.")},
+    {"kicker": "EUROPE  •  UKRAINE", "art": art_city,
      "headline": "Russian missile hits Zelenskyy\u2019s hometown",
-     "body": ("A ballistic missile strikes central Kryvyi Rih, killing 2 and "
-              "wounding 60. Kyiv says 148 drones flew overnight.")},
-    {"kicker": "MARKETS  •  NEW YORK & TOKYO", "art": art_chart,
-     "headline": "AI sell-off rattles world markets",
-     "body": ("The S&P 500 falls 3.7% and the Nikkei 5.1% as doubts grow "
-              "over AI spending. The rout spreads across Asia and Europe.")},
+     "body": ("A boy of 7 and a paramedic are killed; "
+              "60 are wounded in Kryvyi Rih.")},
     {"kicker": "MIDDLE EAST  •  STRAIT OF HORMUZ", "art": art_tanker,
-     "headline": "Iran steps up tanker strikes as the Hormuz standoff deepens",
-     "body": ("Attacks near the strait hit a monthly high. Tehran shows off "
-              "new missile launchers while the US blockade holds.")},
-    {"kicker": "ASIA  •  TECHNOLOGY", "art": art_chip,
-     "headline": "Nvidia halts H200 chip exports to China",
-     "body": ("The halt lands amid Washington\u2019s debate over advanced AI "
-              "chips — and Beijing watches the curbs tighten.")},
+     "headline": "Iran says it downed a US drone over Hormuz",
+     "body": ("Tehran claims a US MQ-9 downed as two tankers are hit. "
+              "The US has not confirmed it.")},
+    {"kicker": "MARKETS  •  CRYPTO", "art": art_chart,
+     "headline": "Bitcoin hits a two-year low, then rebounds",
+     "body": ("Bitcoin falls to about $55,000, its lowest since 2024, "
+              "then climbs back above $60,000.")},
+    {"kicker": "AMERICAS  •  SINALOA, MEXICO", "art": art_pin,
+     "headline": "Mexico captures \u201cEl Chapo Isidro\u201d",
+     "body": ("FBI most-wanted Fausto Isidro Meza Flores is seized; "
+              "11 are killed in the violence.")},
     {"kicker": "SOUTH AMERICA  •  PERU", "art": art_quake,
      "headline": "Magnitude 6.7 quake shakes Peru\u2019s Andes",
      "body": ("A strong tremor strikes the high Andes. No damage or "
@@ -216,25 +250,36 @@ STORIES = [
 ]
 
 BRIEFS_LEFT = [
-    ("POLAND", "Russian missile lands in Poland; NATO protests."),
-    ("SAUDI ARABIA", "Houthis fire missiles at Riyadh."),
-    ("GULF OF FINLAND", "Drones hit cargo ship Sparta II."),
-    ("FRANCE", "Police sentenced over the racist beating of Michel Zecler."),
-    ("UNITED STATES", "Man convicted over the deadly Palisades fire."),
-    ("UNITED KINGDOM", "Princess Catherine on life after cancer."),
+    ("DAVAO", "Air Niugini jet lands safely; all 146 aboard safe."),
+    ("MERCURY", "BepiColombo enters orbit after an 8-year trip."),
+    ("WELLINGTON", "Rahul\u2019s 136 puts India 118 ahead of New Zealand."),
+    ("KYIV", "Zelenskyy: Russia hit our bridges 109 times."),
+    ("WARSAW", "Rutte: NATO will defend every inch of Poland."),
+    ("LUHANSK", "Ukraine hits depot, command posts and bridge."),
+    ("RIYADH", "Houthis fire missiles at Riyadh and Jizan."),
+    ("GENEVA", "UN talks on AI weapons end with no binding rules."),
+    ("BRAZIL", "Wolbachia mosquitoes cut dengue 69% in children."),
 ]
 BRIEFS_RIGHT = [
-    ("HAITI", "Heavy fighting as forces battle gangs for a key corridor."),
-    ("ETHIOPIA", "700,000 people displaced in the south of the country."),
-    ("TURKEY", "State takes control of S\u00f6zc\u00fc TV."),
-    ("NEW YORK", "Indian man sentenced over a plot to kill a Sikh leader."),
-    ("GENEVA", "UN talks agree to keep working on AI weapons rules."),
-    ("BRAZIL", "Mosquitoes cut dengue cases by 69%."),
+    ("UNITED KINGDOM", "Catherine on life after cancer in film \u201cHeal\u201d."),
+    ("SINALOA", "11 killed in violence after cartel boss\u2019s capture."),
+    ("LONDON", "England beat New Zealand 37\u201312, a record margin."),
+    ("TUSCANY", "Ex-police chief De Gennaro found dead amid mafia probe."),
+    ("HELSINKI", "Finland limits air and sea traffic in the eastern Gulf."),
+    ("BRUSSELS", "NATO to meet Monday over Poland airspace breach."),
+    ("QESHM", "Iran claims a second US drone downed over the Gulf."),
+    ("ANTALYA", "100 groups call COP31 \u201cone of the most disappointing\u201d."),
+    ("UKRAINE", "Russia fired 3 missiles and 148 drones overnight."),
 ]
 
-WEEK_LINE = ("ALSO THIS WEEK  —  19 NOV: Myanmar found guilty of Rohingya genocide "
-             "•  20 NOV: Trump, Xi, Putin sign Shenzhen declaration "
-             "•  19 NOV: Anthropic debuts at $2tn")
+DATE_CHECK_TITLE = "DATE CHECK \u2014 NOT 21 NOVEMBER NEWS, SO LEFT OUT:"
+DATE_CHECK_LINES = [
+    "Nvidia H200 (17 Nov)  \u00b7  Wall Street sell-off (20 Nov)  \u00b7  "
+    "Poland missile (20 Nov)  \u00b7  Zecler verdict (20 Nov)",
+    "Palisades verdict (20 Nov)  \u00b7  ICJ Myanmar ruling (19 Nov)  \u00b7  "
+    "Shenzhen declaration (19 Nov)  \u00b7  Anthropic $2tn debut (19 Nov)  \u00b7  "
+    "Voyager 1 (18 Nov)",
+]
 
 
 def draw_card(d, x, y, w, h, story):
@@ -257,18 +302,18 @@ def draw_card(d, x, y, w, h, story):
                f_body, leading=17)
 
 
-def draw_briefs(d, x, y, w, items, f_bold, f_reg):
+def draw_briefs(d, x, y, w, items, f_bold, f_reg, leading=14, gap=2):
     yy = y
     for place, text in items:
-        lead = place + " — "
+        lead = place + " \u2014 "
         lw = d.textlength(lead, font=f_bold)
         d.text((x, yy), lead, font=f_bold, fill=INK)
         rest = wrap(d, text, f_reg, w - lw)
         xx = x + lw
         for i, line in enumerate(rest):
             d.text((xx if i == 0 else x, yy), line, font=f_reg, fill=INK)
-            yy += 16
-        yy += 4
+            yy += leading
+        yy += gap
     return yy
 
 
@@ -290,7 +335,7 @@ def build():
     tw = d.textlength("SATURDAY, 21 NOVEMBER 2026", font=f_date)
     d.text(((W - tw) / 2, 107), "SATURDAY, 21 NOVEMBER 2026", font=f_date, fill=LIGHT)
     f_sub = font(SANS_B, 13)
-    centered(d, W // 2, 140, "ONE DAY  •  SEVEN REGIONS  •  THE WORLD\u2019S NEWS IN ONE IMAGE",
+    centered(d, W // 2, 140, "ONE DAY  \u2022  SIX REGIONS  \u2022  THE WORLD\u2019S NEWS IN ONE IMAGE",
              f_sub, fill=GREY)
 
     # lead story
@@ -311,8 +356,8 @@ def build():
     d.rectangle([W - 40 - 300, y0 + 10, W - 40, y0 + 160], outline=RULE, width=1)
 
     # story grid 2 x 3
-    gy = 338
-    gw, gh, gap = 464, 138, 10
+    gy = 336
+    gw, gh, gap = 464, 126, 8
     gx0 = 40
     for i, story in enumerate(STORIES):
         cx = gx0 + (i % 2) * (gw + gap)
@@ -320,27 +365,30 @@ def build():
         draw_card(d, cx, cy, gw, gh, story)
     grid_bottom = gy + 3 * gh + 2 * gap
 
-    # briefs
-    by = grid_bottom + 12
-    d.line([40, by, W - 40, by], fill=INK, width=2)
-    f_sec = font(SANS_B, 15)
-    d.text((40, by + 8), "MORE FROM 21 NOVEMBER", font=f_sec, fill=INK)
-    f_bold = font(SANS_B, 13)
-    f_reg = font(SANS, 13)
-    col_w = 464
-    end_l = draw_briefs(d, 40, by + 32, col_w, BRIEFS_LEFT, f_bold, f_reg)
-    end_r = draw_briefs(d, 40 + col_w + 16, by + 32, col_w, BRIEFS_RIGHT, f_bold, f_reg)
-    briefs_bottom = max(end_l, end_r)
+    # DATE CHECK box
+    by = grid_bottom + 8
+    d.rectangle([40, by, W - 40, by + 58], outline=RED, width=2)
+    f_dc_title = font(SANS_B, 13)
+    f_dc = font(SANS, 12)
+    d.text((52, by + 7), DATE_CHECK_TITLE, font=f_dc_title, fill=RED)
+    d.text((52, by + 26), DATE_CHECK_LINES[0], font=f_dc, fill=INK)
+    d.text((52, by + 42), DATE_CHECK_LINES[1], font=f_dc, fill=INK)
 
-    # honestly dated week line
-    wy = briefs_bottom + 6
-    d.line([40, wy, W - 40, wy], fill=RULE, width=1)
-    f_week = font(SANS, 11)
-    text_block(d, 40, wy + 7, wrap(d, WEEK_LINE, f_week, W - 80), f_week, leading=15)
+    # briefs
+    hy = by + 58 + 12
+    d.line([40, hy, W - 40, hy], fill=INK, width=2)
+    f_sec = font(SANS_B, 15)
+    d.text((40, hy + 6), "MORE FROM 21 NOVEMBER", font=f_sec, fill=INK)
+    f_bold = font(SANS_B, 12)
+    f_reg = font(SANS, 12)
+    col_w = 464
+    end_l = draw_briefs(d, 40, hy + 28, col_w, BRIEFS_LEFT, f_bold, f_reg)
+    end_r = draw_briefs(d, 40 + col_w + 16, hy + 28, col_w, BRIEFS_RIGHT, f_bold, f_reg)
+    briefs_bottom = max(end_l, end_r)
 
     # footer
     f_foot = font(SANS, 11)
-    centered(d, W // 2, H - 44,
+    centered(d, W // 2, H - 40,
              "Events happened or were first reported on 21 November 2026, unless dated otherwise.",
              f_foot, fill=GREY)
     return img
