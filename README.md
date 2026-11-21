@@ -7,13 +7,16 @@ make.fun's "Sum up 21 November's world news in one image" bounty.
 
 A one-page newspaper front page, drawn entirely in code
 (`generate_poster.py`, Python + Pillow): a masthead dated
-**SATURDAY, 21 NOVEMBER 2026**, a lead story on the COP31 climate talks
+**SATURDAY, 21 NOVEMBER 2026**, a strip of six big numbers from the day's
+news (146 aboard safe, magnitude 6.7, 148 drones, $120bn climate fund,
+109 bridge strikes, 11 killed), a lead story on the COP31 climate talks
 running into overtime in Antalya, six more main stories (the Sparta II drone
 attack in the Gulf of Finland, the Russian missile strike on Kryvyi Rih, the
 Hormuz standoff, Bitcoin's two-year low and rebound, Mexico's capture of
 cartel boss "El Chapo Isidro", the M6.7 Peru quake), eighteen briefs from
 across six regions, and a DATE CHECK box listing the big non-21-November
-stories that were deliberately left out.
+stories that were deliberately left out. Story kickers are coloured by
+region so the spread of the news is visible at a glance.
 
 Every event in the main sections happened, or was first reported, on
 21 November 2026. Stories from other days are not in the main sections: the

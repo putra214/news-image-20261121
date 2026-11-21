@@ -6,8 +6,9 @@ every letter stays sharp. No network, no randomness, no timestamps in the
 output: the same script always writes the same bytes.
 
 v4 (2026-11-22, fix session): replaces the v3 poster. See build-report.md.
-NOTE: v4 generator written but NOT YET RUN/TESTED in this session — entry.png
-in this repo is still v3 until the generator is run and main.py is tested 2x.
+v5 (2026-11-22, visual-fix session): adds a big-number strip under the
+masthead, a much larger date line, a bolder DATE CHECK with ✕ per item, and
+region-coloured kickers — visual fixes only, no news content changed.
 """
 import math
 import os
@@ -20,6 +21,9 @@ GREY = (90, 88, 80)
 RED = (176, 30, 30)
 BLUE = (29, 78, 137)
 TEAL = (14, 107, 92)
+AMBER = (150, 80, 0)
+PURPLE = (96, 52, 120)
+GREEN = (43, 92, 60)
 LIGHT = (255, 255, 255)
 RULE = (150, 146, 134)
 
@@ -85,6 +89,11 @@ def art_globe(d, x, y, w, h):
     d.ellipse([cx - 44, cy - 38, cx - 6, cy - 2], fill=(52, 110, 71))
     d.ellipse([cx + 2, cy + 6, cx + 44, cy + 40], fill=(52, 110, 71))
     d.ellipse([cx - 10, cy - 52, cx + 26, cy - 24], fill=(52, 110, 71))
+    # thermometer, bottom right (climate is heating up)
+    tx = x + w - 32
+    d.rectangle([tx, y + h - 62, tx + 8, y + h - 22], outline=GREY, width=2, fill=LIGHT)
+    d.rectangle([tx + 2, y + h - 44, tx + 6, y + h - 24], fill=RED)
+    d.ellipse([tx - 3, y + h - 26, tx + 11, y + h - 12], outline=GREY, width=2, fill=RED)
 
 
 def art_pin(d, x, y, w, h):
@@ -158,8 +167,18 @@ def art_city(d, x, y, w, h):
 
 def art_chart(d, x, y, w, h):
     d.rectangle([x, y, x + w, y + h], fill=(255, 255, 255))
+    # faint gridlines
+    for gy in (y + 30, y + 54, y + 78):
+        d.line([x + 14, gy, x + w - 10, gy], fill=(225, 225, 225), width=1)
     d.line([x + 14, y + 12, x + 14, y + h - 14], fill=GREY, width=2)
     d.line([x + 14, y + h - 14, x + w - 10, y + h - 14], fill=GREY, width=2)
+    # gold coin, top right
+    ccx, ccy, cr = x + w - 28, y + 26, 15
+    d.ellipse([ccx - cr, ccy - cr, ccx + cr, ccy + cr], fill=(242, 160, 7),
+              outline=(150, 100, 10), width=2)
+    f_coin = font(SANS_B, 20)
+    bw = d.textlength("B", font=f_coin)
+    d.text((ccx - bw / 2, ccy - 11), "B", font=f_coin, fill=(120, 70, 0))
     pts = [(x + 18, y + 22), (x + 42, y + 34), (x + 62, y + 30),
            (x + 82, y + 52), (x + 100, y + 66), (x + w - 16, y + h - 24)]
     d.line(pts, fill=RED, width=4, joint="curve")
@@ -215,6 +234,7 @@ def art_quake(d, x, y, w, h):
 
 LEAD = {
     "kicker": "CLIMATE  •  ANTALYA, TURKEY",
+    "color": TEAL,
     "headline": "COP31 talks run into overtime as fossil fuels vanish from the draft",
     "deck": ("Negotiators miss the Friday deadline in Antalya. The draft drops "
              "every mention of fossil fuels — and a $120bn fund for poorer nations. "
@@ -222,64 +242,115 @@ LEAD = {
     "art": art_globe,
 }
 
+# Big-number strip under the masthead (v5). Every number already appears
+# in the poster itself — verified against the stories/briefs below:
+# 146 = Davao brief ("all 146 aboard safe"); 6.7 = Peru card (magnitude);
+# 148 = Ukraine brief ("148 drones overnight"); $120BN = lead deck
+# ("$120bn fund"); 109 = Kyiv brief ("bridges 109 times"); 11 = Mexico
+# card ("11 are killed in the violence").
+STATS = [
+    ("146", "ABOARD, ALL SAFE"),
+    ("6.7", "QUAKE MAGNITUDE"),
+    ("148", "DRONES OVERNIGHT"),
+    ("$120BN", "CLIMATE FUND"),
+    ("109", "BRIDGE STRIKES"),
+    ("11", "KILLED IN SINALOA"),
+]
+
 STORIES = [
-    {"kicker": "BALTIC SEA  •  GULF OF FINLAND", "art": art_ship,
+    {"kicker": "BALTIC SEA  •  GULF OF FINLAND", "color": BLUE, "art": art_ship,
      "headline": "Drones strike Russian cargo ship Sparta II",
      "body": ("Two drones hit the ship bound for Kaliningrad; "
               "all 16 crew are rescued.")},
-    {"kicker": "EUROPE  •  UKRAINE", "art": art_city,
+    {"kicker": "EUROPE  •  UKRAINE", "color": BLUE, "art": art_city,
      "headline": "Russian missile hits Zelenskyy\u2019s hometown",
      "body": ("A boy of 7 and a paramedic are killed; "
               "60 are wounded in Kryvyi Rih.")},
-    {"kicker": "MIDDLE EAST  •  STRAIT OF HORMUZ", "art": art_tanker,
+    {"kicker": "MIDDLE EAST  •  STRAIT OF HORMUZ", "color": AMBER, "art": art_tanker,
      "headline": "Iran says it downed a US drone over Hormuz",
      "body": ("Tehran claims a US MQ-9 downed as two tankers are hit. "
               "The US has not confirmed it.")},
-    {"kicker": "MARKETS  •  CRYPTO", "art": art_chart,
+    {"kicker": "MARKETS  •  CRYPTO", "color": PURPLE, "art": art_chart,
      "headline": "Bitcoin hits a two-year low, then rebounds",
      "body": ("Bitcoin falls to about $55,000, its lowest since 2024, "
               "then climbs back above $60,000.")},
-    {"kicker": "AMERICAS  •  SINALOA, MEXICO", "art": art_pin,
+    {"kicker": "AMERICAS  •  SINALOA, MEXICO", "color": RED, "art": art_pin,
      "headline": "Mexico captures \u201cEl Chapo Isidro\u201d",
      "body": ("FBI most-wanted Fausto Isidro Meza Flores is seized; "
               "11 are killed in the violence.")},
-    {"kicker": "SOUTH AMERICA  •  PERU", "art": art_quake,
+    {"kicker": "SOUTH AMERICA  •  PERU", "color": GREEN, "art": art_quake,
      "headline": "Magnitude 6.7 quake shakes Peru\u2019s Andes",
      "body": ("A strong tremor strikes the high Andes. No damage or "
               "casualties are reported.")},
 ]
 
 BRIEFS_LEFT = [
-    ("DAVAO", "Air Niugini jet lands safely; all 146 aboard safe."),
-    ("MERCURY", "BepiColombo enters orbit after an 8-year trip."),
-    ("WELLINGTON", "Rahul\u2019s 136 puts India 118 ahead of New Zealand."),
-    ("KYIV", "Zelenskyy: Russia hit our bridges 109 times."),
-    ("WARSAW", "Rutte: NATO will defend every inch of Poland."),
-    ("LUHANSK", "Ukraine hits depot, command posts and bridge."),
-    ("RIYADH", "Houthis fire missiles at Riyadh and Jizan."),
-    ("GENEVA", "UN talks on AI weapons end with no binding rules."),
-    ("BRAZIL", "Wolbachia mosquitoes cut dengue 69% in children."),
+    ("DAVAO", "Air Niugini jet lands safely; all 146 aboard safe.", TEAL),
+    ("MERCURY", "BepiColombo enters orbit after an 8-year trip.", PURPLE),
+    ("WELLINGTON", "Rahul\u2019s 136 puts India 118 ahead of New Zealand.", BLUE),
+    ("KYIV", "Zelenskyy: Russia hit our bridges 109 times.", BLUE),
+    ("WARSAW", "Rutte: NATO will defend every inch of Poland.", BLUE),
+    ("LUHANSK", "Ukraine hits depot, command posts and bridge.", BLUE),
+    ("RIYADH", "Houthis fire missiles at Riyadh and Jizan.", AMBER),
+    ("GENEVA", "UN talks on AI weapons end with no binding rules.", BLUE),
+    ("BRAZIL", "Wolbachia mosquitoes cut dengue 69% in children.", GREEN),
 ]
 BRIEFS_RIGHT = [
-    ("UNITED KINGDOM", "Catherine on life after cancer in film \u201cHeal\u201d."),
-    ("SINALOA", "11 killed in violence after cartel boss\u2019s capture."),
-    ("LONDON", "England beat New Zealand 37\u201312, a record margin."),
-    ("TUSCANY", "Ex-police chief De Gennaro found dead amid mafia probe."),
-    ("HELSINKI", "Finland limits air and sea traffic in the eastern Gulf."),
-    ("BRUSSELS", "NATO to meet Monday over Poland airspace breach."),
-    ("QESHM", "Iran claims a second US drone downed over the Gulf."),
-    ("ANTALYA", "100 groups call COP31 \u201cone of the most disappointing\u201d."),
-    ("UKRAINE", "Russia fired 3 missiles and 148 drones overnight."),
+    ("UNITED KINGDOM", "Catherine on life after cancer in film \u201cHeal\u201d.", BLUE),
+    ("SINALOA", "11 killed in violence after cartel boss\u2019s capture.", RED),
+    ("LONDON", "England beat New Zealand 37\u201312, a record margin.", BLUE),
+    ("TUSCANY", "Ex-police chief De Gennaro found dead amid mafia probe.", BLUE),
+    ("HELSINKI", "Finland limits air and sea traffic in the eastern Gulf.", BLUE),
+    ("BRUSSELS", "NATO to meet Monday over Poland airspace breach.", BLUE),
+    ("QESHM", "Iran claims a second US drone downed over the Gulf.", AMBER),
+    ("ANTALYA", "100 groups call COP31 \u201cone of the most disappointing\u201d.", TEAL),
+    ("UKRAINE", "Russia fired 3 missiles and 148 drones overnight.", BLUE),
 ]
 
-DATE_CHECK_TITLE = "DATE CHECK \u2014 NOT 21 NOVEMBER NEWS, SO LEFT OUT:"
-DATE_CHECK_LINES = [
-    "Nvidia H200 (17 Nov)  \u00b7  Wall Street sell-off (20 Nov)  \u00b7  "
-    "Poland missile (20 Nov)  \u00b7  Zecler verdict (20 Nov)",
-    "Palisades verdict (20 Nov)  \u00b7  ICJ Myanmar ruling (19 Nov)  \u00b7  "
-    "Shenzhen declaration (19 Nov)  \u00b7  Anthropic $2tn debut (19 Nov)  \u00b7  "
+DATE_CHECK_TITLE = "DATE CHECK \u2014 WHAT WE LEFT OUT:"
+DATE_CHECK_ITEMS = [
+    "Nvidia H200 (17 Nov)",
+    "Wall Street sell-off (20 Nov)",
+    "Poland missile (20 Nov)",
+    "Zecler verdict (20 Nov)",
+    "Palisades verdict (20 Nov)",
+    "ICJ Myanmar ruling (19 Nov)",
+    "Shenzhen declaration (19 Nov)",
+    "Anthropic $2tn debut (19 Nov)",
     "Voyager 1 (18 Nov)",
 ]
+
+
+def balance_date_check(d, items, fnt, max_w):
+    """Split the 9 DATE CHECK items into 2 lines, balanced by measured width."""
+    sep = "  \u00b7  "
+    lines, widths = [[], []], [0, 0]
+    for item in items:
+        text = "\u2715 " + item
+        w = d.textlength(text, font=fnt)
+        li = 0 if widths[0] <= widths[1] else 1
+        widths[li] += w + (d.textlength(sep, font=fnt) if lines[li] else 0)
+        lines[li].append(text)
+    return [sep.join(line) for line in lines]
+
+
+def draw_stats(d, x, y, w, h):
+    """Big-number strip: 6 numbers, each with a short label (v5)."""
+    d.rectangle([x, y, x + w, y + h], fill=(250, 235, 228))
+    d.line([x, y, x + w, y], fill=RED, width=2)
+    d.line([x, y + h, x + w, y + h], fill=RED, width=2)
+    cell = w / len(STATS)
+    f_num = font(SANS_B, 30)
+    f_lab = font(SANS_B, 10)
+    for i, (num, lab) in enumerate(STATS):
+        cx = x + cell * i + cell / 2
+        nw = d.textlength(num, font=f_num)
+        d.text((cx - nw / 2, y + 4), num, font=f_num, fill=RED)
+        lw = d.textlength(lab, font=f_lab)
+        d.text((cx - lw / 2, y + h - 14), lab, font=f_lab, fill=INK)
+        if i:
+            sx = x + cell * i
+            d.line([sx, y + 6, sx, y + h - 6], fill=RULE, width=1)
 
 
 def draw_card(d, x, y, w, h, story):
@@ -293,7 +364,7 @@ def draw_card(d, x, y, w, h, story):
     f_head = font(SANS_B, 18)
     f_body = font(SANS, 13)
     yy = y + 10
-    d.text((tx, yy), story["kicker"], font=f_kick, fill=RED)
+    d.text((tx, yy), story["kicker"], font=f_kick, fill=story["color"])
     yy += 20
     yy = text_block(d, tx, yy, wrap(d, story["headline"], f_head, tw),
                     f_head, leading=22)
@@ -304,10 +375,10 @@ def draw_card(d, x, y, w, h, story):
 
 def draw_briefs(d, x, y, w, items, f_bold, f_reg, leading=14, gap=2):
     yy = y
-    for place, text in items:
+    for place, text, color in items:
         lead = place + " \u2014 "
         lw = d.textlength(lead, font=f_bold)
-        d.text((x, yy), lead, font=f_bold, fill=INK)
+        d.text((x, yy), lead, font=f_bold, fill=color)
         rest = wrap(d, text, f_reg, w - lw)
         xx = x + lw
         for i, line in enumerate(rest):
@@ -327,37 +398,38 @@ def build():
 
     # masthead
     f_mast = font(SERIF_B, 52)
-    centered(d, W // 2, 26, "THE WORLD IN ONE DAY", f_mast)
-    d.line([40, 96, W - 40, 96], fill=INK, width=2)
-    f_date = font(SANS_B, 24)
-    # black dateline bar
-    d.rectangle([40, 102, W - 40, 134], fill=INK)
-    tw = d.textlength("SATURDAY, 21 NOVEMBER 2026", font=f_date)
-    d.text(((W - tw) / 2, 107), "SATURDAY, 21 NOVEMBER 2026", font=f_date, fill=LIGHT)
+    centered(d, W // 2, 18, "THE WORLD IN ONE DAY", f_mast)
+    d.line([40, 78, W - 40, 78], fill=INK, width=2)
+    # the day itself, big and red (v5) — no longer hidden in a black bar
+    f_date = font(SERIF_B, 34)
+    centered(d, W // 2, 84, "SATURDAY, 21 NOVEMBER 2026", f_date, fill=RED)
     f_sub = font(SANS_B, 13)
-    centered(d, W // 2, 140, "ONE DAY  \u2022  SIX REGIONS  \u2022  THE WORLD\u2019S NEWS IN ONE IMAGE",
+    centered(d, W // 2, 128, "ONE DAY  \u2022  SIX REGIONS  \u2022  THE WORLD\u2019S NEWS IN ONE IMAGE",
              f_sub, fill=GREY)
 
+    # big-number strip (v5)
+    draw_stats(d, 40, 150, W - 80, 50)
+
     # lead story
-    y0 = 164
+    y0 = 208
     d.line([40, y0, W - 40, y0], fill=RULE, width=1)
     lx, lw = 40, 600
     f_kick = font(SANS_B, 15)
     f_head = font(SANS_B, 30)
-    f_deck = font(SANS, 15)
+    f_deck = font(SANS, 14)
     yy = y0 + 10
-    d.text((lx, yy), LEAD["kicker"], font=f_kick, fill=RED)
+    d.text((lx, yy), LEAD["kicker"], font=f_kick, fill=LEAD["color"])
     yy += 24
-    yy = text_block(d, lx, yy, wrap(d, LEAD["headline"], f_head, lw), f_head, leading=35)
+    yy = text_block(d, lx, yy, wrap(d, LEAD["headline"], f_head, lw), f_head, leading=33)
     yy += 4
-    text_block(d, lx, yy, wrap(d, LEAD["deck"], f_deck, lw), f_deck, leading=20)
+    text_block(d, lx, yy, wrap(d, LEAD["deck"], f_deck, lw), f_deck, leading=18)
     # lead illustration, right
-    LEAD["art"](d, W - 40 - 300, y0 + 10, 300, 150)
-    d.rectangle([W - 40 - 300, y0 + 10, W - 40, y0 + 160], outline=RULE, width=1)
+    LEAD["art"](d, W - 40 - 300, y0 + 10, 300, 140)
+    d.rectangle([W - 40 - 300, y0 + 10, W - 40, y0 + 150], outline=RULE, width=1)
 
     # story grid 2 x 3
-    gy = 336
-    gw, gh, gap = 464, 126, 8
+    gy = 372
+    gw, gh, gap = 464, 122, 6
     gx0 = 40
     for i, story in enumerate(STORIES):
         cx = gx0 + (i % 2) * (gw + gap)
@@ -365,25 +437,28 @@ def build():
         draw_card(d, cx, cy, gw, gh, story)
     grid_bottom = gy + 3 * gh + 2 * gap
 
-    # DATE CHECK box
+    # DATE CHECK box (v5: bolder title, ✕ per item)
     by = grid_bottom + 8
-    d.rectangle([40, by, W - 40, by + 58], outline=RED, width=2)
+    d.rectangle([40, by, W - 40, by + 56], outline=RED, width=2)
     f_dc_title = font(SANS_B, 13)
     f_dc = font(SANS, 12)
-    d.text((52, by + 7), DATE_CHECK_TITLE, font=f_dc_title, fill=RED)
-    d.text((52, by + 26), DATE_CHECK_LINES[0], font=f_dc, fill=INK)
-    d.text((52, by + 42), DATE_CHECK_LINES[1], font=f_dc, fill=INK)
+    d.text((52, by + 6), DATE_CHECK_TITLE, font=f_dc_title, fill=RED)
+    dc_lines = balance_date_check(d, DATE_CHECK_ITEMS, f_dc, W - 40 - 52)
+    d.text((52, by + 24), dc_lines[0], font=f_dc, fill=INK)
+    d.text((52, by + 40), dc_lines[1], font=f_dc, fill=INK)
 
     # briefs
-    hy = by + 58 + 12
+    hy = by + 56 + 12
     d.line([40, hy, W - 40, hy], fill=INK, width=2)
     f_sec = font(SANS_B, 15)
     d.text((40, hy + 6), "MORE FROM 21 NOVEMBER", font=f_sec, fill=INK)
     f_bold = font(SANS_B, 12)
     f_reg = font(SANS, 12)
     col_w = 464
-    end_l = draw_briefs(d, 40, hy + 28, col_w, BRIEFS_LEFT, f_bold, f_reg)
-    end_r = draw_briefs(d, 40 + col_w + 16, hy + 28, col_w, BRIEFS_RIGHT, f_bold, f_reg)
+    end_l = draw_briefs(d, 40, hy + 28, col_w, BRIEFS_LEFT, f_bold, f_reg,
+                        leading=13, gap=1)
+    end_r = draw_briefs(d, 40 + col_w + 16, hy + 28, col_w, BRIEFS_RIGHT, f_bold, f_reg,
+                        leading=13, gap=1)
     briefs_bottom = max(end_l, end_r)
 
     # footer
