@@ -9,6 +9,11 @@ v4 (2026-11-22, fix session): replaces the v3 poster. See build-report.md.
 v5 (2026-11-22, visual-fix session): adds a big-number strip under the
 masthead, a much larger date line, a bolder DATE CHECK with ✕ per item, and
 region-coloured kickers — visual fixes only, no news content changed.
+v6 (2026-11-22, stories+map session): adds 6 verified 21 Nov briefs
+(Bahrain, Basra, Abuja/CAF, East Timor, Brussels trade, Las Vegas pole),
+a dotted world map with numbered pins as the lead art (replacing the
+globe), number badges on the lead + grid cards, and a tighter layout so
+everything still fits — 31 main items, seven regions.
 """
 import math
 import os
@@ -94,6 +99,64 @@ def art_globe(d, x, y, w, h):
     d.rectangle([tx, y + h - 62, tx + 8, y + h - 22], outline=GREY, width=2, fill=LIGHT)
     d.rectangle([tx + 2, y + h - 44, tx + 6, y + h - 24], fill=RED)
     d.ellipse([tx - 3, y + h - 26, tx + 11, y + h - 12], outline=GREY, width=2, fill=RED)
+
+
+# ---------------------------------------------------------------------------
+# Dotted world map (v6): rough continent outlines in lon/lat, rendered as
+# dots on an equirectangular grid (lon -180..180, lat 85..-55). Pins are
+# numbered to match the lead story (1) and the grid cards (2-6); the
+# Bitcoin card has no location, so it carries no pin.
+# ---------------------------------------------------------------------------
+LAND = [
+    [(-168, 66), (-150, 70), (-135, 69), (-125, 71), (-115, 68), (-105, 69), (-95, 69), (-90, 68), (-85, 66), (-82, 70), (-78, 71), (-72, 62), (-65, 60), (-55, 52), (-53, 47), (-60, 46), (-65, 44), (-70, 42), (-74, 39), (-76, 35), (-80, 32), (-81, 26), (-84, 30), (-87, 30), (-90, 21), (-94, 18), (-97, 16), (-92, 15), (-87, 13), (-83, 9), (-79, 9), (-85, 11), (-90, 14), (-95, 16), (-100, 18), (-105, 20), (-110, 23), (-114, 28), (-117, 33), (-122, 37), (-124, 42), (-124, 48), (-130, 55), (-140, 60), (-150, 61), (-158, 58), (-165, 60)],
+    [(-79, 9), (-77, 7), (-72, 12), (-64, 11), (-60, 9), (-54, 6), (-51, 4), (-50, 0), (-44, -3), (-38, -5), (-35, -9), (-37, -13), (-40, -20), (-42, -23), (-48, -27), (-52, -32), (-58, -35), (-62, -39), (-66, -42), (-68, -47), (-70, -52), (-73, -50), (-73, -44), (-73, -37), (-71, -30), (-70, -22), (-70, -18), (-75, -15), (-79, -8), (-81, -4), (-80, 1), (-79, 7)],
+    [(-17, 15), (-16, 21), (-13, 27), (-9, 31), (-5, 35), (0, 36), (5, 37), (10, 37), (11, 34), (19, 33), (25, 32), (30, 31), (32, 31), (34, 28), (36, 23), (38, 18), (40, 15), (43, 12), (48, 11), (51, 12), (51, 10), (46, 5), (42, 0), (40, -5), (39, -10), (37, -15), (36, -20), (34, -26), (31, -29), (28, -33), (24, -34), (20, -35), (17, -32), (15, -27), (13, -22), (12, -17), (11, -12), (9, -4), (9, 0), (9, 4), (4, 6), (-3, 5), (-8, 5), (-13, 8), (-16, 12)],
+    [(-10, 36), (-9, 38), (-9, 43), (-4, 48), (-2, 49), (1, 51), (4, 53), (7, 54), (8, 57), (10, 59), (12, 58), (18, 56), (21, 55), (24, 58), (28, 60), (30, 62), (32, 65), (35, 66), (40, 67), (45, 68), (50, 69), (55, 69), (60, 69), (65, 70), (70, 72), (75, 73), (80, 74), (90, 75), (100, 76), (110, 74), (120, 73), (130, 72), (140, 72), (150, 70), (160, 69), (170, 67), (178, 65), (178, 62), (170, 60), (165, 60), (162, 56), (158, 52), (156, 50), (150, 48), (144, 44), (142, 40), (140, 35), (138, 34), (135, 34), (132, 33), (129, 31), (126, 38), (122, 38), (122, 31), (120, 27), (118, 25), (112, 22), (109, 20), (108, 18), (105, 10), (104, 9), (101, 7), (99, 10), (98, 14), (97, 16), (94, 17), (92, 21), (90, 22), (88, 22), (86, 20), (84, 18), (82, 16), (80, 13), (79, 9), (77, 8), (76, 10), (75, 15), (74, 20), (72, 20), (70, 22), (68, 23), (66, 25), (64, 25), (61, 25), (59, 25), (57, 26), (54, 26), (52, 27), (50, 29), (49, 30), (47, 30), (44, 29), (42, 29), (40, 31), (39, 34), (36, 36), (34, 36), (31, 36), (28, 36), (26, 38), (23, 36), (22, 37), (20, 39), (19, 42), (16, 44), (14, 45), (12, 44), (10, 44), (8, 44), (5, 43), (3, 42), (0, 40), (-2, 37), (-5, 36), (-9, 36)],
+    [(113, -22), (114, -28), (115, -33), (118, -35), (122, -34), (126, -32), (129, -32), (132, -32), (135, -35), (138, -35), (140, -38), (143, -39), (146, -39), (149, -37), (150, -37), (152, -34), (153, -31), (153, -27), (151, -24), (148, -20), (146, -19), (143, -17), (142, -11), (141, -13), (139, -15), (137, -12), (135, -12), (133, -12), (131, -12), (129, -14), (127, -14), (125, -16), (123, -17), (121, -19), (119, -20), (117, -21), (115, -22)],
+    [(-5, 50), (-3, 53), (-5, 56), (-3, 58), (-1, 57), (0, 53), (-1, 51)],
+    [(130, 31), (132, 33), (134, 34), (136, 35), (138, 35), (140, 37), (141, 39), (142, 42), (144, 44), (143, 42), (141, 38), (139, 36), (137, 35), (135, 33), (132, 32)],
+    [(95, 5), (98, 3), (100, 0), (103, -2), (106, -6), (110, -7), (114, -8), (118, -9), (122, -10), (126, -9), (128, -4), (131, -2), (134, -3), (137, -4), (140, -6), (141, -8), (138, -8), (135, -7), (132, -5), (130, -3), (128, -2), (126, 0), (124, 1), (122, 0), (120, 0), (117, 0), (114, 0), (111, 0), (108, -6), (105, -6), (102, -4), (99, 1), (96, 4)],
+    [(167, -45), (170, -43), (173, -41), (175, -38), (177, -38), (178, -37), (176, -40), (174, -42), (172, -43), (169, -46)],
+]
+
+
+def _inside(x, y, poly):
+    n = len(poly)
+    j = n - 1
+    c = False
+    for i in range(n):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+            c = not c
+        j = i
+    return c
+
+
+def art_map(d, x, y, w, h):
+    """Dotted world map with numbered pins for the main stories (v6)."""
+    d.rectangle([x, y, x + w, y + h], fill=(216, 236, 247))
+    for gx in range(2, w, 4):
+        for gy in range(2, h, 4):
+            lon = gx / w * 360 - 180
+            lat = 85 - gy / h * 140
+            if any(_inside(lon, lat, p) for p in LAND):
+                d.ellipse([x + gx - 1, y + gy - 1, x + gx + 1, y + gy + 1],
+                          fill=(96, 116, 120))
+    # (lon, lat, number); Europe pins nudged apart so the circles don't touch
+    pins = [(30.7, 36.9, "1", -1, 5), (27.0, 60.0, "2", -6, -4),
+            (33.4, 47.9, "3", 6, 0), (56.5, 26.5, "4", 0, 0),
+            (-106.0, 23.2, "5", 0, 0), (-76.0, -11.0, "6", 0, 0)]
+    f_pin = font(SANS_B, 10)
+    for lon, lat, num, dx, dy in pins:
+        px = x + (lon + 180) * w / 360.0 + dx
+        py = y + (85 - lat) * h / 140.0 + dy
+        d.ellipse([px - 7, py - 7, px + 7, py + 7], fill=RED,
+                  outline=LIGHT, width=1)
+        tw = d.textlength(num, font=f_pin)
+        d.text((px - tw / 2, py - 6), num, font=f_pin, fill=LIGHT)
+    f_lab = font(SANS_B, 10)
+    d.text((x + 8, y + h - 16), "WHERE IT HAPPENED", font=f_lab, fill=GREY)
 
 
 def art_pin(d, x, y, w, h):
@@ -230,6 +293,23 @@ def art_quake(d, x, y, w, h):
 # (statement 19 Nov), Sozcu TV (seizure 17 Nov), Sikh-plot sentence (20 Nov),
 # Zecler verdict (20 Nov), Palisades verdict (20 Nov), Mlambo-Ngcuka death
 # (20 Nov), WHO Ebola update (20 Nov), Trump/Iran-strikes report (18 Nov).
+# New in v6 (all verified 21 Nov via news search, 22 Nov 2026):
+# - Bahrain: IRGC claims missile+drone strikes on US positions at Al-Riffa
+#   and Awali bases Sat night; Bahrain confirms a civilian industrial
+#   facility hit, fire, no injuries (Reuters/Al Jazeera, 21 Nov).
+# - Basra: fire at Hartha power station, at least 4 killed, 30-35 injured,
+#   800 MW plant shut (Reuters, 21 Nov).
+# - Brussels: EU and Indonesia sign CEPA + investment pact after 10 years
+#   of talks; 90.4% of tariff lines zero duty; in force 2027 (Reuters/EC,
+#   21 Nov).
+# - Abuja: CAF general assembly — all 54 members back Infantino for FIFA
+#   re-election; grants rise to $25M (Reuters/AP, 21 Nov). First Africa
+#   story: poster now covers SEVEN regions.
+# - East Timor: M6.8 quake 09:42 UTC, 105 km NE of Lospalos, felt in
+#   Darwin (USGS/Reuters/AAP, 21 Nov).
+# - Las Vegas: Antonelli fastest in qualifying but a 5-place grid penalty
+#   hands pole to Verstappen for Saturday's race; reported Sat 21 Nov UTC
+#   (FIA/Formula1.com, 21 Nov).
 # ---------------------------------------------------------------------------
 
 LEAD = {
@@ -239,7 +319,8 @@ LEAD = {
     "deck": ("Negotiators miss the Friday deadline in Antalya. The draft drops "
              "every mention of fossil fuels — and a $120bn fund for poorer nations. "
              "The EU warns: \u201ca good deal or no deal.\u201d"),
-    "art": art_globe,
+    "art": art_map,
+    "pin": 1,
 }
 
 # Big-number strip under the masthead (v5). Every number already appears
@@ -259,26 +340,32 @@ STATS = [
 
 STORIES = [
     {"kicker": "BALTIC SEA  •  GULF OF FINLAND", "color": BLUE, "art": art_ship,
+     "pin": 2,
      "headline": "Drones strike Russian cargo ship Sparta II",
      "body": ("Two drones hit the ship bound for Kaliningrad; "
               "all 16 crew are rescued.")},
     {"kicker": "EUROPE  •  UKRAINE", "color": BLUE, "art": art_city,
+     "pin": 3,
      "headline": "Russian missile hits Zelenskyy\u2019s hometown",
      "body": ("A boy of 7 and a paramedic are killed; "
               "60 are wounded in Kryvyi Rih.")},
     {"kicker": "MIDDLE EAST  •  STRAIT OF HORMUZ", "color": AMBER, "art": art_tanker,
+     "pin": 4,
      "headline": "Iran says it downed a US drone over Hormuz",
      "body": ("Tehran claims a US MQ-9 downed as two tankers are hit. "
               "The US has not confirmed it.")},
     {"kicker": "MARKETS  •  CRYPTO", "color": PURPLE, "art": art_chart,
+     "pin": None,
      "headline": "Bitcoin hits a two-year low, then rebounds",
      "body": ("Bitcoin falls to about $55,000, its lowest since 2024, "
               "then climbs back above $60,000.")},
     {"kicker": "AMERICAS  •  SINALOA, MEXICO", "color": RED, "art": art_pin,
+     "pin": 5,
      "headline": "Mexico captures \u201cEl Chapo Isidro\u201d",
      "body": ("FBI most-wanted Fausto Isidro Meza Flores is seized; "
               "11 are killed in the violence.")},
     {"kicker": "SOUTH AMERICA  •  PERU", "color": GREEN, "art": art_quake,
+     "pin": 6,
      "headline": "Magnitude 6.7 quake shakes Peru\u2019s Andes",
      "body": ("A strong tremor strikes the high Andes. No damage or "
               "casualties are reported.")},
@@ -294,6 +381,9 @@ BRIEFS_LEFT = [
     ("RIYADH", "Houthis fire missiles at Riyadh and Jizan.", AMBER),
     ("GENEVA", "UN talks on AI weapons end with no binding rules.", BLUE),
     ("BRAZIL", "Wolbachia mosquitoes cut dengue 69% in children.", GREEN),
+    ("BAHRAIN", "IRGC claims strikes on US bases; a factory burns.", AMBER),
+    ("BASRA", "Fire at Hartha power station kills at least 4.", AMBER),
+    ("ABUJA", "All 54 CAF members back Infantino for FIFA.", GREEN),
 ]
 BRIEFS_RIGHT = [
     ("UNITED KINGDOM", "Catherine on life after cancer in film \u201cHeal\u201d.", BLUE),
@@ -301,11 +391,17 @@ BRIEFS_RIGHT = [
     ("LONDON", "England beat New Zealand 37\u201312, a record margin.", BLUE),
     ("TUSCANY", "Ex-police chief De Gennaro found dead amid mafia probe.", BLUE),
     ("HELSINKI", "Finland limits air and sea traffic in the eastern Gulf.", BLUE),
-    ("BRUSSELS", "NATO to meet Monday over Poland airspace breach.", BLUE),
+    ("NATO", "Meets Monday over Poland airspace breach.", BLUE),
     ("QESHM", "Iran claims a second US drone downed over the Gulf.", AMBER),
     ("ANTALYA", "100 groups call COP31 \u201cone of the most disappointing\u201d.", TEAL),
     ("UKRAINE", "Russia fired 3 missiles and 148 drones overnight.", BLUE),
+    ("EAST TIMOR", "M6.8 quake off East Timor rattles Darwin.", TEAL),
+    ("BRUSSELS", "EU and Indonesia sign trade pact after 10 years of talks.", BLUE),
+    ("LAS VEGAS", "Verstappen inherits Vegas pole after Antonelli penalty.", RED),
 ]
+
+# (v6 note: the NATO brief's place label was "BRUSSELS" in v5; renamed to
+# "NATO" so it does not duplicate the new Brussels trade brief above.)
 
 DATE_CHECK_TITLE = "DATE CHECK \u2014 WHAT WE LEFT OUT:"
 DATE_CHECK_ITEMS = [
@@ -353,24 +449,34 @@ def draw_stats(d, x, y, w, h):
             d.line([sx, y + 6, sx, y + h - 6], fill=RULE, width=1)
 
 
+def draw_pin_badge(d, cx, cy, num):
+    """Small red circle with a white number (v6: matches a map pin)."""
+    d.ellipse([cx - 10, cy - 10, cx + 10, cy + 10], fill=RED, outline=LIGHT, width=1)
+    f_badge = font(SANS_B, 12)
+    tw = d.textlength(str(num), font=f_badge)
+    d.text((cx - tw / 2, cy - 7), str(num), font=f_badge, fill=LIGHT)
+
+
 def draw_card(d, x, y, w, h, story):
     d.rectangle([x, y, x + w, y + h], outline=RULE, width=1)
     iw = 118
     story["art"](d, x + 1, y + 1, iw, h - 2)
     d.line([x + iw + 1, y, x + iw + 1, y + h], fill=RULE, width=1)
+    if story.get("pin"):
+        draw_pin_badge(d, x + w - 16, y + 16, story["pin"])
     tx = x + iw + 12
     tw = w - iw - 24
     f_kick = font(SANS_B, 12)
-    f_head = font(SANS_B, 18)
+    f_head = font(SANS_B, 17)
     f_body = font(SANS, 13)
     yy = y + 10
     d.text((tx, yy), story["kicker"], font=f_kick, fill=story["color"])
     yy += 20
     yy = text_block(d, tx, yy, wrap(d, story["headline"], f_head, tw),
-                    f_head, leading=22)
+                    f_head, leading=21)
     yy += 2
     text_block(d, tx, yy, wrap(d, story["body"], f_body, tw),
-               f_body, leading=17)
+               f_body, leading=16)
 
 
 def draw_briefs(d, x, y, w, items, f_bold, f_reg, leading=14, gap=2):
@@ -396,22 +502,22 @@ def build():
     d.rectangle([10, 10, W - 11, H - 11], outline=INK, width=2)
     d.rectangle([16, 16, W - 17, H - 17], outline=RULE, width=1)
 
-    # masthead
+    # masthead (v6: tightened 8px to make room for the map + 6 briefs)
     f_mast = font(SERIF_B, 52)
-    centered(d, W // 2, 18, "THE WORLD IN ONE DAY", f_mast)
-    d.line([40, 78, W - 40, 78], fill=INK, width=2)
+    centered(d, W // 2, 16, "THE WORLD IN ONE DAY", f_mast)
+    d.line([40, 76, W - 40, 76], fill=INK, width=2)
     # the day itself, big and red (v5) — no longer hidden in a black bar
     f_date = font(SERIF_B, 34)
-    centered(d, W // 2, 84, "SATURDAY, 21 NOVEMBER 2026", f_date, fill=RED)
+    centered(d, W // 2, 82, "SATURDAY, 21 NOVEMBER 2026", f_date, fill=RED)
     f_sub = font(SANS_B, 13)
-    centered(d, W // 2, 128, "ONE DAY  \u2022  SIX REGIONS  \u2022  THE WORLD\u2019S NEWS IN ONE IMAGE",
+    centered(d, W // 2, 124, "ONE DAY  \u2022  SEVEN REGIONS  \u2022  THE WORLD\u2019S NEWS IN ONE IMAGE",
              f_sub, fill=GREY)
 
     # big-number strip (v5)
-    draw_stats(d, 40, 150, W - 80, 50)
+    draw_stats(d, 40, 144, W - 80, 48)
 
     # lead story
-    y0 = 208
+    y0 = 200
     d.line([40, y0, W - 40, y0], fill=RULE, width=1)
     lx, lw = 40, 600
     f_kick = font(SANS_B, 15)
@@ -419,17 +525,18 @@ def build():
     f_deck = font(SANS, 14)
     yy = y0 + 10
     d.text((lx, yy), LEAD["kicker"], font=f_kick, fill=LEAD["color"])
+    draw_pin_badge(d, lx + lw - 16, yy + 10, LEAD["pin"])
     yy += 24
     yy = text_block(d, lx, yy, wrap(d, LEAD["headline"], f_head, lw), f_head, leading=33)
     yy += 4
     text_block(d, lx, yy, wrap(d, LEAD["deck"], f_deck, lw), f_deck, leading=18)
-    # lead illustration, right
+    # lead illustration (v6: world map with numbered pins), right
     LEAD["art"](d, W - 40 - 300, y0 + 10, 300, 140)
     d.rectangle([W - 40 - 300, y0 + 10, W - 40, y0 + 150], outline=RULE, width=1)
 
-    # story grid 2 x 3
-    gy = 372
-    gw, gh, gap = 464, 122, 6
+    # story grid 2 x 3 (v6: cards 112px instead of 122)
+    gy = 362
+    gw, gh, gap = 464, 112, 6
     gx0 = 40
     for i, story in enumerate(STORIES):
         cx = gx0 + (i % 2) * (gw + gap)
@@ -437,18 +544,18 @@ def build():
         draw_card(d, cx, cy, gw, gh, story)
     grid_bottom = gy + 3 * gh + 2 * gap
 
-    # DATE CHECK box (v5: bolder title, ✕ per item)
+    # DATE CHECK box (v5: bolder title, ✕ per item; v6: 52px instead of 56)
     by = grid_bottom + 8
-    d.rectangle([40, by, W - 40, by + 56], outline=RED, width=2)
+    d.rectangle([40, by, W - 40, by + 52], outline=RED, width=2)
     f_dc_title = font(SANS_B, 13)
     f_dc = font(SANS, 12)
-    d.text((52, by + 6), DATE_CHECK_TITLE, font=f_dc_title, fill=RED)
+    d.text((52, by + 4), DATE_CHECK_TITLE, font=f_dc_title, fill=RED)
     dc_lines = balance_date_check(d, DATE_CHECK_ITEMS, f_dc, W - 40 - 52)
-    d.text((52, by + 24), dc_lines[0], font=f_dc, fill=INK)
-    d.text((52, by + 40), dc_lines[1], font=f_dc, fill=INK)
+    d.text((52, by + 20), dc_lines[0], font=f_dc, fill=INK)
+    d.text((52, by + 35), dc_lines[1], font=f_dc, fill=INK)
 
-    # briefs
-    hy = by + 56 + 12
+    # briefs (v6: 12 per column)
+    hy = by + 52 + 12
     d.line([40, hy, W - 40, hy], fill=INK, width=2)
     f_sec = font(SANS_B, 15)
     d.text((40, hy + 6), "MORE FROM 21 NOVEMBER", font=f_sec, fill=INK)

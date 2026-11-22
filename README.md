@@ -10,13 +10,18 @@ A one-page newspaper front page, drawn entirely in code
 **SATURDAY, 21 NOVEMBER 2026**, a strip of six big numbers from the day's
 news (146 aboard safe, magnitude 6.7, 148 drones, $120bn climate fund,
 109 bridge strikes, 11 killed), a lead story on the COP31 climate talks
-running into overtime in Antalya, six more main stories (the Sparta II drone
-attack in the Gulf of Finland, the Russian missile strike on Kryvyi Rih, the
-Hormuz standoff, Bitcoin's two-year low and rebound, Mexico's capture of
-cartel boss "El Chapo Isidro", the M6.7 Peru quake), eighteen briefs from
-across six regions, and a DATE CHECK box listing the big non-21-November
-stories that were deliberately left out. Story kickers are coloured by
-region so the spread of the news is visible at a glance.
+running into overtime in Antalya — illustrated by a dotted world map with
+numbered pins ("WHERE IT HAPPENED") matching the lead and grid stories —
+six more main stories (the Sparta II drone attack in the Gulf of Finland,
+the Russian missile strike on Kryvyi Rih, the Hormuz standoff, Bitcoin's
+two-year low and rebound, Mexico's capture of cartel boss "El Chapo Isidro",
+the M6.7 Peru quake), twenty-four briefs from across seven regions
+(including the Iran strikes on Bahrain, the Basra power-station fire, the
+CAF backing of Infantino in Abuja, the M6.8 East Timor quake, the EU–
+Indonesia trade pact, and Verstappen's Las Vegas pole), and a DATE CHECK box
+listing the big non-21-November stories that were deliberately left out.
+Story kickers are coloured by region so the spread of the news is visible
+at a glance.
 
 Every event in the main sections happened, or was first reported, on
 21 November 2026. Stories from other days are not in the main sections: the
